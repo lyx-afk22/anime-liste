@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Anime-Liste">
+<title>Anime- und Manga-Rangliste</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Zen+Old+Mincho:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#10131a; --surface:#161a23; --surface2:#1c2130; --line:#272e3c;
+  --text:#e5e8ee; --muted:#8c95a6; --faint:#5d6576;
+  --jade:#2aa287; --amber:#d59a33; --violet:#8878e0; --rust:#a4685f; --sky:#4e9fd0;
+  --focus:#54c8ad;
+  --sans:"Zen Kaku Gothic New",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"Zen Old Mincho",Georgia,"Times New Roman",serif;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#e9ebe6; --surface:#ffffff; --surface2:#f3f4f0; --line:#d4d8cf;
+    --text:#191d24; --muted:#5d6470; --faint:#868d99;
+    --jade:#14735e; --amber:#96690f; --violet:#5b4bb8; --rust:#8a4f45; --sky:#2d6e96;
+    --focus:#14735e;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#e9ebe6; --surface:#ffffff; --surface2:#f3f4f0; --line:#d4d8cf;
+  --text:#191d24; --muted:#5d6470; --faint:#868d99;
+  --jade:#14735e; --amber:#96690f; --violet:#5b4bb8; --rust:#8a4f45; --sky:#2d6e96;
+  --focus:#14735e;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg); color:var(--text); font-family:var(--sans); font-size:16px; line-height:1.5; -webkit-text-size-adjust:100%}
+.wrap{max-width:900px;margin:0 auto;padding:20px 14px 90px}
+
+header{padding:8px 0 18px}
+h1{font-family:var(--serif); font-weight:700; font-size:clamp(26px,6vw,38px); line-height:1.15; margin:0 0 6px}
+.sub{color:var(--muted); font-size:14px; margin:0}
+.meter{margin:18px 0 6px}
+.meterhead{display:flex; justify-content:space-between; align-items:baseline; gap:12px; margin-bottom:7px}
+.bignum{font-size:26px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1}
+.bignum em{font-size:14px; font-weight:400; color:var(--muted); font-style:normal}
+.meterstats{font-size:13px; color:var(--muted); font-variant-numeric:tabular-nums; text-align:right}
+.bar{height:6px; background:var(--surface2); border-radius:3px; overflow:hidden; display:flex}
+.bar i{display:block; height:100%; transition:width .35s ease}
+.b-done{background:var(--jade)} .b-watch{background:var(--amber)}
+
+.tabs{display:flex; gap:4px; margin:20px 0 12px; border-bottom:1px solid var(--line)}
+.tab{appearance:none; background:none; border:0; border-bottom:2px solid transparent; color:var(--muted);
+  font:inherit; font-weight:500; padding:9px 14px; cursor:pointer; margin-bottom:-1px}
+.tab[aria-selected="true"]{color:var(--text); border-bottom-color:var(--jade)}
+
+.controls{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px}
+input[type="search"]{flex:1 1 170px; min-width:0; background:var(--surface); color:var(--text);
+  border:1px solid var(--line); border-radius:7px; padding:9px 11px; font:inherit}
+select,button.ghost{background:var(--surface); color:var(--text); border:1px solid var(--line);
+  border-radius:7px; padding:9px 10px; font:inherit; font-size:14px; cursor:pointer}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--focus); outline-offset:1px}
+.toolrow{display:flex; flex-wrap:wrap; gap:8px; margin-bottom:14px; font-size:13px}
+.toolrow button{background:none; border:0; color:var(--muted); text-decoration:underline;
+  text-underline-offset:3px; cursor:pointer; font:inherit; padding:2px 0}
+.toolrow button:hover{color:var(--text)}
+
+.list{display:flex; flex-direction:column; gap:7px}
+.row{background:var(--surface); border:1px solid var(--line); border-left:3px solid var(--line);
+  border-radius:8px; padding:10px 12px; display:grid; grid-template-columns:44px 1fr; gap:4px 12px; align-items:start}
+.row.s-watching{border-left-color:var(--amber)}
+.row.s-done{border-left-color:var(--jade)}
+.row.s-planned{border-left-color:var(--violet)}
+.row.s-dropped{border-left-color:var(--rust)}
+.row.s-animeseen{border-left-color:var(--sky)}
+.row.s-done .title{color:var(--muted)}
+.rank{grid-row:1 / span 2; font-variant-numeric:tabular-nums; font-weight:700; font-size:19px;
+  color:var(--faint); text-align:right; padding-top:1px}
+.row.s-done .rank{color:var(--jade)}
+.title{font-weight:500; line-height:1.3}
+.meta{font-size:12.5px; color:var(--muted); margin-top:3px; font-variant-numeric:tabular-nums;
+  display:flex; flex-wrap:wrap; align-items:center; gap:6px}
+.flag{display:inline-flex; align-items:center; gap:4px; border:1px solid var(--line);
+  border-radius:20px; padding:1px 7px; font-size:11.5px; line-height:1.6}
+.flag::before{content:""; width:5px; height:5px; border-radius:50%; background:currentColor}
+.f-run{color:var(--sky)} .f-end{color:var(--faint)} .f-stop{color:var(--rust)} .f-open{color:var(--amber)}
+.fields{grid-column:2; display:flex; flex-wrap:wrap; gap:6px; margin-top:8px}
+.fields select,.fields input{background:var(--surface2); border:1px solid var(--line); color:var(--text);
+  border-radius:6px; padding:5px 7px; font:inherit; font-size:13px}
+.fields input{width:86px; font-variant-numeric:tabular-nums}
+.fields select.st{font-weight:500}
+.fields select.st[data-v="watching"]{color:var(--amber)}
+.fields select.st[data-v="done"]{color:var(--jade)}
+.fields select.st[data-v="planned"]{color:var(--violet)}
+.fields select.st[data-v="dropped"]{color:var(--rust)}
+.fields select.st[data-v="animeseen"]{color:var(--sky)}
+.empty{text-align:center; color:var(--muted); padding:40px 10px; font-size:15px}
+footer{margin-top:28px; padding-top:16px; border-top:1px solid var(--line); color:var(--faint); font-size:12.5px}
+footer p{margin:0 0 8px}
+.saveflag{position:fixed; right:12px; bottom:12px; background:var(--surface); border:1px solid var(--line);
+  color:var(--muted); font-size:12px; padding:6px 10px; border-radius:20px; opacity:0; transition:opacity .25s;
+  pointer-events:none}
+.saveflag.on{opacity:1}
+.saveflag.warn{color:var(--amber); border-color:var(--amber)}
+.storebar{font-size:12.5px; line-height:1.45; margin:0 0 14px; padding:8px 11px;
+  border-radius:7px; border:1px solid var(--line); background:var(--surface)}
+.storebar.checking{color:var(--faint)}
+.storebar.ok{color:var(--jade); border-color:color-mix(in srgb,var(--jade) 40%,var(--line))}
+.storebar.bad{color:var(--amber); border-color:color-mix(in srgb,var(--amber) 45%,var(--line))}
+dialog{background:var(--surface); color:var(--text); border:1px solid var(--line); border-radius:10px;
+  padding:18px; max-width:min(560px,92vw); width:100%}
+dialog::backdrop{background:rgba(0,0,0,.55)}
+dialog h2{font-family:var(--serif); font-size:19px; margin:0 0 10px}
+dialog textarea{width:100%; height:150px; background:var(--surface2); color:var(--text);
+  border:1px solid var(--line); border-radius:7px; padding:9px; font:inherit; font-size:12.5px; resize:vertical}
+dialog .drow{display:flex; gap:8px; justify-content:flex-end; margin-top:12px}
+dialog button{background:var(--surface2); border:1px solid var(--line); color:var(--text);
+  border-radius:7px; padding:8px 13px; font:inherit; font-size:14px; cursor:pointer}
+dialog button.primary{background:var(--jade); border-color:var(--jade); color:#fff}
+dialog p.hint{color:var(--muted); font-size:13px; margin:0 0 10px}
+@media (max-width:420px){
+  .rank{font-size:16px} .row{grid-template-columns:36px 1fr; padding:9px 10px} .fields input{width:76px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Anime, Filme und Manga</h1>
+  <p class="sub">Je zur Hälfte nach Bekanntheit und Relevanz sowie nach dem Urteil von Community und Fachwelt. Trag ein, wo du stehst — gespeichert wird automatisch.</p>
+  <div class="meter">
+    <div class="meterhead">
+      <div class="bignum"><span id="mDone">0</span> <em id="mTotal">von 0</em></div>
+      <div class="meterstats" id="mStats">&nbsp;</div>
+    </div>
+    <div class="bar"><i class="b-done" id="bDone" style="width:0%"></i><i class="b-watch" id="bWatch" style="width:0%"></i></div>
+  </div>
+</header>
+
+<div class="tabs" role="tablist">
+  <button class="tab" role="tab" aria-selected="true" data-list="anime">Anime</button>
+  <button class="tab" role="tab" aria-selected="false" data-list="film">Filme</button>
+  <button class="tab" role="tab" aria-selected="false" data-list="manga">Manga</button>
+</div>
+
+<div class="controls">
+  <input type="search" id="q" placeholder="Titel suchen" autocomplete="off">
+  <select id="fStatus">
+    <option value="all">Alle Einträge</option>
+    <option value="none">Noch offen</option>
+    <option value="watching">Läuft gerade</option>
+    <option value="done">Fertig</option>
+    <option value="planned">Auf der Merkliste</option>
+    <option value="dropped">Abgebrochen</option>
+    <option value="rated">Bewertet</option>
+  </select>
+  <select id="fFlag">
+    <option value="all">Jeder Fortsetzungsstand</option>
+    <option value="end">Abgeschlossen</option>
+    <option value="run">Laufend</option>
+    <option value="open">Fortsetzung unklar</option>
+    <option value="stop">Abgesetzt</option>
+  </select>
+  <select id="fSort">
+    <option value="desc">Letzter Platz zuerst</option>
+    <option value="asc">Platz 1 zuerst</option>
+    <option value="year">Neueste zuerst</option>
+    <option value="score">Meine Punkte zuerst</option>
+  </select>
+</div>
+<div class="toolrow">
+  <button type="button" id="themeBtn">Hell / Dunkel</button>
+  
+  <button type="button" id="setupBtn">Verbindung einrichten</button>
+  <button type="button" id="expBtn">Sicherung als Text</button>
+  <button type="button" id="impBtn">Sicherung einspielen</button>
+</div>
+
+<p class="storebar checking" id="storeState">Speicher wird geprüft …</p>
+
+<div class="list" id="list"></div>
+
+<footer>
+  <p>Die Platzierungen führen Publikums- und Kritikerwertungen, Reichweite und Wirkung auf das Medium zusammen — keine exakte Wissenschaft, aber nah dran.</p>
+  <p><strong>Fortsetzungsstand:</strong> laufend = geht weiter oder ist angekündigt · abgeschlossen = Geschichte im Anime zu Ende erzählt · Fortsetzung unklar = offen, aber nichts angekündigt · abgesetzt = bricht ab und wird nicht fortgesetzt.</p>
+</footer>
+</div>
+
+<div class="saveflag" id="saveflag">gespeichert</div>
+
+<dialog id="dlg">
+  <h2 id="dlgTitle">Sicherung</h2>
+  <p class="hint" id="dlgHint"></p>
+  <textarea id="dlgText" spellcheck="false"></textarea>
+  <div class="drow">
+    <button type="button" id="dlgClose">Schließen</button>
+    <button type="button" class="primary" id="dlgOk">Übernehmen</button>
+  </div>
+</dialog>
+
+<script>
+/* Daten: [Titel, Jahr, Umfang, Fortsetzungsstand]
+   run = laufend · end = abgeschlossen · open = Fortsetzung unklar · stop = abgesetzt */
+const ANIME = [
+["One Piece",1999,"1150+ Folgen","run"],
+["Fullmetal Alchemist: Brotherhood",2009,"64 Folgen","end"],
+["Neon Genesis Evangelion",1995,"26 Folgen + End of Evangelion","end"],
+["Dragon Ball Z",1989,"291 Folgen","end"],
+["Attack on Titan",2013,"89 Folgen · 4 Staffeln","end"],
+["Death Note",2006,"37 Folgen","end"],
+["Cowboy Bebop",1998,"26 Folgen","end"],
+["Naruto Shippuden",2007,"500 Folgen","end"],
+["Hunter x Hunter (2011)",2011,"148 Folgen","open"],
+["Steins;Gate",2011,"24 Folgen","end"],
+["Demon Slayer",2019,"4 Staffeln + Filme","run"],
+["Code Geass: Lelouch of the Rebellion",2006,"50 Folgen · 2 Staffeln","run"],
+["Jujutsu Kaisen",2020,"2 Staffeln + Film","run"],
+["Frieren: Beyond Journey's End",2023,"2 Staffeln","run"],
+["Monster",2004,"74 Folgen","end"],
+["Dragon Ball",1986,"153 Folgen","end"],
+["Naruto",2002,"220 Folgen","end"],
+["Tengen Toppa Gurren Lagann",2007,"27 Folgen","end"],
+["Pokémon",1997,"laufende Serienreihe","run"],
+["My Hero Academia",2016,"8 Staffeln","end"],
+["Mob Psycho 100",2016,"37 Folgen · 3 Staffeln","end"],
+["Bleach",2004,"366 Folgen + Thousand-Year Blood War","run"],
+["Sailor Moon",1992,"200 Folgen","end"],
+["One Punch Man",2015,"3 Staffeln","run"],
+["Ghost in the Shell: Stand Alone Complex",2002,"52 Folgen · 2 Staffeln","end"],
+["Vinland Saga",2019,"48 Folgen · 2 Staffeln","open"],
+["JoJo's Bizarre Adventure",2012,"6 Teile","run"],
+["Spy x Family",2022,"3 Staffeln + Film","run"],
+["Chainsaw Man",2022,"12 Folgen + Film","run"],
+["Serial Experiments Lain",1998,"13 Folgen","end"],
+["Legend of the Galactic Heroes",1988,"110 Folgen","end"],
+["Samurai Champloo",2004,"26 Folgen","end"],
+["Clannad: After Story",2008,"24 Folgen","end"],
+["Berserk (1997)",1997,"25 Folgen","stop"],
+["Mobile Suit Gundam (0079)",1979,"43 Folgen","end"],
+["Gintama",2006,"367 Folgen","end"],
+["Haikyu!!",2014,"85 Folgen · 4 Staffeln + Filme","run"],
+["Your Lie in April",2014,"22 Folgen","end"],
+["Psycho-Pass",2012,"3 Staffeln + Filme","run"],
+["Made in Abyss",2017,"2 Staffeln + Filme","run"],
+["Re:Zero",2016,"3 Staffeln","run"],
+["Fate/Zero",2011,"25 Folgen","end"],
+["Sword Art Online",2012,"3 Staffeln + Filme","run"],
+["Tokyo Ghoul",2014,"4 Staffeln","end"],
+["Dandadan",2024,"2 Staffeln","run"],
+["Trigun",1998,"26 Folgen","end"],
+["Mushishi",2005,"46 Folgen","end"],
+["Rurouni Kenshin",1996,"95 Folgen","end"],
+["Monogatari-Serie",2009,"mehrere Staffeln","run"],
+["Toradora!",2008,"25 Folgen","end"],
+["Violet Evergarden",2018,"13 Folgen + Film","end"],
+["K-On!",2009,"39 Folgen + Film","end"],
+["Nichijou",2011,"26 Folgen","end"],
+["Detektiv Conan",1996,"1150+ Folgen","run"],
+["Doraemon",1979,"laufende Serienreihe","run"],
+["Crayon Shin-chan",1992,"laufende Serienreihe","run"],
+["Yu Yu Hakusho",1992,"112 Folgen","end"],
+["InuYasha",2000,"193 Folgen","end"],
+["Card Captor Sakura",1998,"70 Folgen + Clear Card","run"],
+["Digimon Adventure",1999,"54 Folgen","end"],
+["Yu-Gi-Oh! Duel Monsters",2000,"224 Folgen","end"],
+["Captain Tsubasa",1983,"mehrere Serien","run"],
+["Fist of the North Star",1984,"152 Folgen","end"],
+["Saint Seiya",1986,"114 Folgen","end"],
+["Ashita no Joe",1970,"79 Folgen","end"],
+["Astro Boy",1963,"193 Folgen","end"],
+["Lupin III (Teil 1)",1971,"23 Folgen","run"],
+["Urusei Yatsura",1981,"195 Folgen","end"],
+["Ranma ½",1989,"161 Folgen + Neuauflage 2024","run"],
+["Maison Ikkoku",1986,"96 Folgen","end"],
+["Touch",1985,"101 Folgen","end"],
+["Die Rosen von Versailles",1979,"40 Folgen","end"],
+["Super Dimension Fortress Macross",1982,"36 Folgen","end"],
+["Mobile Suit Gundam Wing",1995,"49 Folgen","end"],
+["Mobile Suit Gundam SEED",2002,"50 Folgen + Film","end"],
+["Mobile Suit Gundam: Iron-Blooded Orphans",2015,"50 Folgen","end"],
+["Mobile Suit Gundam: The Witch from Mercury",2022,"24 Folgen","end"],
+["Parasyte -the maxim-",2014,"24 Folgen","end"],
+["Erased",2016,"12 Folgen","end"],
+["Anohana",2011,"11 Folgen + Film","end"],
+["Black Lagoon",2006,"29 Folgen + OVA","open"],
+["Baccano!",2007,"16 Folgen","end"],
+["Durarara!!",2010,"4 Staffeln","end"],
+["Fate/stay night: Unlimited Blade Works",2014,"26 Folgen","end"],
+["The Melancholy of Haruhi Suzumiya",2006,"28 Folgen + Film","open"],
+["Revolutionary Girl Utena",1997,"39 Folgen","end"],
+["Dragon Ball Super",2015,"131 Folgen + Filme","run"],
+["Slam Dunk",1993,"101 Folgen","stop"],
+["Hajime no Ippo",2000,"127 Folgen · 3 Staffeln","run"],
+["Great Teacher Onizuka",1999,"43 Folgen","end"],
+["Nana",2006,"47 Folgen","stop"],
+["Fruits Basket (2019)",2019,"63 Folgen","end"],
+["Ouran High School Host Club",2006,"26 Folgen","stop"],
+["March Comes In Like a Lion",2016,"44 Folgen","open"],
+["Ping Pong the Animation",2014,"11 Folgen","end"],
+["Kaguya-sama: Love Is War",2019,"3 Staffeln + Film","open"],
+["Rascal Does Not Dream of Bunny Girl Senpai",2018,"13 Folgen + Filme","run"],
+["My Dress-Up Darling",2022,"2 Staffeln","run"],
+["Horimiya",2021,"13 Folgen + Piece","end"],
+["Kimi ni Todoke",2009,"3 Staffeln","end"],
+["Kill la Kill",2013,"24 Folgen","end"],
+["Higurashi When They Cry",2006,"26 Folgen","end"],
+["Death Parade",2015,"12 Folgen","end"],
+["Hellsing Ultimate",2006,"10 OVAs","end"],
+["Claymore",2007,"26 Folgen","stop"],
+["Soul Eater",2008,"51 Folgen","end"],
+["D.Gray-man",2006,"103 Folgen","open"],
+["Fairy Tail",2009,"328 Folgen + 100 Years Quest","run"],
+["The Seven Deadly Sins",2014,"5 Staffeln + Nachfolgeserie","run"],
+["Black Clover",2017,"170 Folgen + Film","run"],
+["Fire Force",2019,"3 Staffeln","end"],
+["Assassination Classroom",2015,"47 Folgen","end"],
+["Food Wars!",2015,"5 Staffeln","end"],
+["The Promised Neverland",2019,"2 Staffeln","stop"],
+["Dr. Stone",2019,"4 Staffeln","end"],
+["Akame ga Kill!",2014,"24 Folgen","end"],
+["Noragami",2014,"3 Staffeln","run"],
+["Bungo Stray Dogs",2016,"5 Staffeln","run"],
+["Magi: The Labyrinth of Magic",2012,"2 Staffeln + Spin-off","open"],
+["Blue Exorcist",2011,"4 Staffeln","run"],
+["Seraph of the End",2015,"2 Staffeln","run"],
+["Tokyo Revengers",2021,"4 Staffeln","run"],
+["Kaiji",2007,"26 Folgen · 2 Staffeln","open"],
+["Golden Kamuy",2018,"4 Staffeln","end"],
+["Dorohedoro",2020,"12 Folgen · Staffel 2 2026","run"],
+["Devilman Crybaby",2018,"10 Folgen","end"],
+["Terror in Resonance",2014,"11 Folgen","end"],
+["91 Days",2016,"12 Folgen","end"],
+["Kids on the Slope",2012,"12 Folgen","end"],
+["Michiko & Hatchin",2008,"22 Folgen","end"],
+["Space Dandy",2014,"26 Folgen","end"],
+["FLCL",2000,"6 Folgen","end"],
+["Panty & Stocking with Garterbelt",2010,"13 Folgen + Fortsetzung","run"],
+["The Tatami Galaxy",2010,"11 Folgen","end"],
+["Keep Your Hands Off Eizouken!",2020,"12 Folgen","open"],
+["Kaiba",2008,"12 Folgen","end"],
+["Texhnolyze",2003,"22 Folgen","end"],
+["Ergo Proxy",2006,"23 Folgen","end"],
+["Paranoia Agent",2004,"13 Folgen","end"],
+["Eureka Seven",2005,"50 Folgen","end"],
+["Gunbuster",1988,"6 OVAs","end"],
+["Patlabor",1989,"47 Folgen","end"],
+["The Vision of Escaflowne",1996,"26 Folgen","end"],
+["Nadia: The Secret of Blue Water",1990,"39 Folgen","end"],
+["Future Boy Conan",1978,"26 Folgen","end"],
+["Now and Then, Here and There",1999,"13 Folgen","end"],
+["Haibane Renmei",2002,"13 Folgen","end"],
+["Kino's Journey",2003,"13 Folgen","end"],
+["Wolf's Rain",2003,"26 Folgen","end"],
+["Last Exile",2003,"26 Folgen","end"],
+["Planetes",2003,"26 Folgen","end"],
+["Honey and Clover",2005,"24 Folgen","end"],
+["Welcome to the NHK",2006,"24 Folgen","end"],
+["Genshiken",2004,"12 Folgen + Fortsetzungen","end"],
+["Azumanga Daioh",2002,"26 Folgen","end"],
+["Lucky Star",2007,"24 Folgen","end"],
+["Clannad",2007,"23 Folgen","end"],
+["Angel Beats!",2010,"13 Folgen","end"],
+["Hyouka",2012,"22 Folgen","open"],
+["Silver Spoon",2013,"22 Folgen","end"],
+["Barakamon",2014,"12 Folgen","end"],
+["Shirobako",2014,"24 Folgen + Film","end"],
+["Sound! Euphonium",2015,"3 Staffeln + Filme","end"],
+["A Place Further Than the Universe",2018,"13 Folgen","end"],
+["Laid-Back Camp",2018,"3 Staffeln + Film","run"],
+["Non Non Biyori",2013,"3 Staffeln + Film","end"],
+["Girls und Panzer",2012,"12 Folgen + Filmreihe","run"],
+["Chihayafuru",2011,"3 Staffeln","end"],
+["Run with the Wind",2018,"23 Folgen","end"],
+["Ao Ashi",2022,"24 Folgen","run"],
+["Cross Game",2009,"50 Folgen","end"],
+["Yuri!!! on Ice",2016,"12 Folgen","open"],
+["Kuroko's Basketball",2012,"75 Folgen","end"],
+["Initial D",1998,"5 Stages","end"],
+["Megalo Box",2018,"2 Staffeln","end"],
+["Banana Fish",2018,"24 Folgen","end"],
+["Given",2019,"11 Folgen + Filme","run"],
+["Natsume's Book of Friends",2008,"6 Staffeln","run"],
+["Spice and Wolf",2008,"25 Folgen + Neuauflage 2024","run"],
+["Skip and Loafer",2023,"12 Folgen","run"],
+["The Dangers in My Heart",2023,"2 Staffeln","run"],
+["Komi Can't Communicate",2021,"2 Staffeln","open"],
+["Zombie Land Saga",2018,"2 Staffeln","run"],
+["Love Live!",2013,"mehrere Serien","run"],
+["Free!",2013,"3 Staffeln + Filme","end"],
+["Sk8 the Infinity",2021,"12 Folgen","end"],
+["Cells at Work!",2018,"2 Staffeln","end"],
+["The Devil is a Part-Timer!",2013,"3 Staffeln","run"],
+["86 Eighty-Six",2021,"23 Folgen","open"],
+["Steins;Gate 0",2018,"23 Folgen","end"],
+["Vivy: Fluorite Eye's Song",2021,"13 Folgen + Film","end"],
+["Odd Taxi",2021,"13 Folgen + Film","end"],
+["Log Horizon",2013,"3 Staffeln","open"],
+["No Game No Life",2014,"12 Folgen + Film","open"],
+["KonoSuba",2016,"3 Staffeln + Film","run"],
+["Overlord",2015,"4 Staffeln + Film","run"],
+["That Time I Got Reincarnated as a Slime",2018,"3 Staffeln + Film","run"],
+["The Rising of the Shield Hero",2019,"3 Staffeln","run"],
+["Mushoku Tensei",2021,"2 Staffeln","run"],
+["The Eminence in Shadow",2022,"2 Staffeln","run"],
+["Goblin Slayer",2018,"2 Staffeln + Film","run"],
+["Grimgar of Fantasy and Ash",2016,"12 Folgen","open"],
+["Shangri-La Frontier",2023,"2 Staffeln","run"],
+["Classroom of the Elite",2017,"4 Staffeln","run"],
+["Tsukimichi: Moonlit Fantasy",2021,"3 Staffeln","run"],
+["Tower of God",2020,"2 Staffeln","run"],
+["The God of High School",2020,"13 Folgen","open"],
+["Kakegurui",2017,"2 Staffeln","open"],
+["Solo Leveling",2024,"2 Staffeln","run"],
+["Kaiju No. 8",2024,"2 Staffeln","run"],
+["Blue Lock",2022,"2 Staffeln + Film","run"],
+["Wind Breaker",2024,"2 Staffeln","run"],
+["Sakamoto Days",2025,"1 Staffel","run"],
+["Hell's Paradise",2023,"2 Staffeln","run"],
+["Gachiakuta",2025,"1 Staffel","run"],
+["Witch Hat Atelier",2026,"1 Staffel","run"],
+["Medalist",2025,"1 Staffel","run"],
+["Chi. – Über die Bewegung der Erde",2024,"25 Folgen","end"],
+["Delicious in Dungeon",2024,"24 Folgen","run"],
+["The Apothecary Diaries",2023,"2 Staffeln","run"],
+["Oshi no Ko",2023,"2 Staffeln + Film","end"],
+["Cyberpunk: Edgerunners",2022,"10 Folgen · Staffel 2 2026","run"],
+["Pluto",2023,"8 Folgen","end"],
+["Heavenly Delusion",2023,"13 Folgen","open"],
+["Wonder Egg Priority",2021,"12 Folgen + Special","end"],
+["Sonny Boy",2021,"12 Folgen","end"],
+["Ranking of Kings",2021,"23 Folgen + Fortsetzung","run"],
+["Summertime Render",2022,"25 Folgen","end"],
+["Bocchi the Rock!",2022,"12 Folgen + Filme","run"],
+["Blue Box",2024,"25 Folgen · Staffel 2 2026","run"],
+["Blue Period",2021,"12 Folgen","open"],
+["To Your Eternity",2021,"3 Staffeln","run"],
+["Beastars",2019,"3 Staffeln","end"],
+["Great Pretender",2020,"23 Folgen + Film","end"],
+["Carole & Tuesday",2019,"24 Folgen","end"],
+["Aggretsuko",2018,"5 Staffeln","end"],
+["Blue Eye Samurai",2023,"8 Folgen","run"],
+["Akudama Drive",2020,"12 Folgen","end"],
+["ID: Invaded",2020,"13 Folgen","end"],
+["Trigun Stampede",2023,"12 Folgen","run"],
+["Fate/strange Fake",2023,"Special + Serie","run"],
+["Record of Ragnarok",2021,"2 Staffeln","run"],
+["Kengan Ashura",2019,"3 Staffeln","run"],
+["Baki",2018,"4 Staffeln","run"],
+["Tiger & Bunny",2011,"2 Staffeln + Filme","open"],
+["DanMachi",2015,"5 Staffeln","run"],
+["Bofuri",2020,"2 Staffeln","run"],
+["The Disastrous Life of Saiki K.",2016,"2 Staffeln + Specials","end"],
+["Darling in the Franxx",2018,"24 Folgen","end"],
+["Knights of Sidonia",2014,"24 Folgen + Film","end"],
+["Grand Blue Dreaming",2018,"2 Staffeln","run"],
+["Prison School",2015,"12 Folgen","stop"],
+["High School DxD",2012,"4 Staffeln","open"],
+["Elfen Lied",2004,"13 Folgen","stop"],
+["Highschool of the Dead",2010,"12 Folgen","stop"],
+["Zom 100",2023,"12 Folgen","open"],
+["Umineko When They Cry",2009,"26 Folgen","stop"],
+["Lord of Mysteries",2025,"Donghua · 1 Staffel","run"],
+["Clevatess",2025,"1 Staffel","run"],
+["Rent-a-Girlfriend",2020,"4 Staffeln","run"]
+];
+
+const MANGA = [
+["Berserk",1989,"43+ Bände","run"],
+["One Piece",1997,"110+ Bände","run"],
+["Vagabond",1998,"37 Bände","open"],
+["Monster",1994,"18 Bände","end"],
+["20th Century Boys",1999,"22 Bände","end"],
+["Fullmetal Alchemist",2001,"27 Bände","end"],
+["Dragon Ball",1984,"42 Bände","end"],
+["Slam Dunk",1990,"31 Bände","end"],
+["Death Note",2003,"12 Bände","end"],
+["Vinland Saga",2005,"28+ Bände","run"],
+["Attack on Titan",2009,"34 Bände","end"],
+["Naruto",1999,"72 Bände","end"],
+["Hunter x Hunter",1998,"38 Bände","open"],
+["Oyasumi Punpun",2007,"13 Bände","end"],
+["Akira",1982,"6 Bände","end"],
+["Nausicaä aus dem Tal der Winde",1982,"7 Bände","end"],
+["Chainsaw Man",2018,"Teil 1 + laufender Teil 2","run"],
+["Jujutsu Kaisen",2018,"30 Bände","end"],
+["Bleach",2001,"74 Bände","end"],
+["Phoenix (Hi no Tori)",1967,"12 Bände","stop"],
+["Black Jack",1973,"25 Bände","end"],
+["Astro Boy",1952,"23 Bände","end"],
+["Buddha",1972,"8 Bände","end"],
+["Adolf",1983,"5 Bände","end"],
+["Lone Wolf and Cub",1970,"28 Bände","end"],
+["Fist of the North Star",1983,"27 Bände","end"],
+["JoJo's Bizarre Adventure",1987,"9 Teile","run"],
+["Rurouni Kenshin",1994,"28 Bände","end"],
+["Yu Yu Hakusho",1990,"19 Bände","end"],
+["Hajime no Ippo",1989,"140+ Bände","run"],
+["Ashita no Joe",1968,"20 Bände","end"],
+["Kingdom",2006,"70+ Bände","run"],
+["Blame!",1997,"10 Bände","end"],
+["Pluto",2003,"8 Bände","end"],
+["Battle Angel Alita",1990,"9 Bände + Mars Chronicle","run"],
+["Ghost in the Shell",1989,"3 Bände","end"],
+["Parasyte",1988,"10 Bände","end"],
+["Uzumaki",1998,"3 Bände","end"],
+["Tomie",1987,"3 Bände","end"],
+["Gyo",2001,"2 Bände","end"],
+["Homunculus",2003,"15 Bände","end"],
+["Gantz",2000,"37 Bände","end"],
+["Dorohedoro",2000,"23 Bände","end"],
+["Blade of the Immortal",1993,"30 Bände","end"],
+["Historie",2003,"12+ Bände","open"],
+["Eden: It's an Endless World!",1997,"18 Bände","end"],
+["Planetes",1999,"4 Bände","end"],
+["Real",1999,"15+ Bände","run"],
+["Yokohama Kaidashi Kikou",1994,"14 Bände","end"],
+["March Comes In Like a Lion",2007,"17+ Bände","run"],
+["Honey and Clover",2000,"10 Bände","end"],
+["Nana",2000,"21 Bände","open"],
+["Fruits Basket",1998,"23 Bände","end"],
+["Ouran High School Host Club",2002,"18 Bände","end"],
+["Solanin",2005,"2 Bände","end"],
+["A Girl on the Shore",2013,"2 Bände","end"],
+["Kimi ni Todoke",2005,"30 Bände","end"],
+["Skip Beat!",2002,"50+ Bände","run"],
+["Your Lie in April",2011,"11 Bände","end"],
+["A Silent Voice",2013,"7 Bände","end"],
+["Orange",2012,"7 Bände","end"],
+["Horimiya",2011,"16 Bände","end"],
+["Kaguya-sama: Love Is War",2015,"28 Bände","end"],
+["Oshi no Ko",2020,"16 Bände","end"],
+["Spy x Family",2019,"15+ Bände","run"],
+["Demon Slayer",2016,"23 Bände","end"],
+["My Hero Academia",2014,"42 Bände","end"],
+["Haikyu!!",2012,"45 Bände","end"],
+["Kuroko's Basketball",2008,"30 Bände","end"],
+["Blue Lock",2018,"30+ Bände","run"],
+["Blue Period",2017,"15+ Bände","run"],
+["Blue Box",2021,"15+ Bände","run"],
+["The Apothecary Diaries",2017,"laufende Reihe","run"],
+["Frieren",2020,"14+ Bände","run"],
+["Dandadan",2021,"20+ Bände","run"],
+["Sakamoto Days",2020,"20+ Bände","run"],
+["Kaiju No. 8",2020,"15+ Bände","run"],
+["Hell's Paradise",2018,"13 Bände","end"],
+["Golden Kamuy",2014,"31 Bände","end"],
+["Made in Abyss",2012,"13+ Bände","run"],
+["To Your Eternity",2016,"22+ Bände","run"],
+["Beastars",2016,"22 Bände","end"],
+["Delicious in Dungeon",2014,"14 Bände","end"],
+["Witch Hat Atelier",2016,"13+ Bände","run"],
+["Land of the Lustrous",2012,"13 Bände","end"],
+["Girls' Last Tour",2014,"6 Bände","end"],
+["Yotsuba&!",2003,"16+ Bände","run"],
+["Azumanga Daioh",1999,"4 Bände","end"],
+["The Way of the Househusband",2018,"12 Bände","end"],
+["Emma",2002,"10 Bände","end"],
+["A Bride's Story",2008,"15+ Bände","run"],
+["Mushishi",1999,"10 Bände","end"],
+["Blue Giant",2013,"laufende Reihe","run"],
+["Ping Pong",1996,"5 Bände","end"],
+["Tekkonkinkreet",1993,"3 Bände","end"],
+["Chi. – Über die Bewegung der Erde",2020,"8 Bände","end"],
+["Fire Punch",2016,"8 Bände","end"],
+["Look Back",2021,"Einzelband","end"],
+["I Am a Hero",2009,"22 Bände","end"],
+["The Summer Hikaru Died",2021,"laufende Reihe","run"],
+["Gachiakuta",2022,"laufende Reihe","run"],
+["Thermae Romae",2008,"6 Bände","end"],
+["The Drops of God",2004,"44 Bände","end"],
+["Oishinbo",1983,"111 Bände","open"],
+["Sailor Moon",1991,"18 Bände","end"],
+["Card Captor Sakura",1996,"12 Bände + Clear Card","run"],
+["Ajin",2012,"17 Bände","end"],
+["Grand Blue Dreaming",2014,"laufende Reihe","run"],
+["Classroom of the Elite",2015,"laufende Reihe","run"],
+["Tower of God",2010,"Webtoon · laufend","run"],
+["Sun-Ken Rock",2006,"25 Bände","end"]
+];
+
+const FILME = [
+["Chihiros Reise ins Zauberland",2001,"Hayao Miyazaki · Ghibli","film"],
+["Akira",1988,"Katsuhiro Otomo","film"],
+["Prinzessin Mononoke",1997,"Hayao Miyazaki · Ghibli","film"],
+["Your Name.",2016,"Makoto Shinkai","film"],
+["Ghost in the Shell",1995,"Mamoru Oshii","film"],
+["Mein Nachbar Totoro",1988,"Hayao Miyazaki · Ghibli","film"],
+["Die letzten Glühwürmchen",1988,"Isao Takahata · Ghibli","film"],
+["Perfect Blue",1997,"Satoshi Kon","film"],
+["A Silent Voice",2016,"Naoko Yamada · KyoAni","film"],
+["Nausicaä aus dem Tal der Winde",1984,"Hayao Miyazaki","film"],
+["Das wandelnde Schloss",2004,"Hayao Miyazaki · Ghibli","film"],
+["Paprika",2006,"Satoshi Kon","film"],
+["Das Schloss im Himmel",1986,"Hayao Miyazaki · Ghibli","film"],
+["Kikis kleiner Lieferservice",1989,"Hayao Miyazaki · Ghibli","film"],
+["Der Junge und der Reiher",2023,"Hayao Miyazaki · Ghibli","film"],
+["Suzume",2022,"Makoto Shinkai","film"],
+["Weathering With You",2019,"Makoto Shinkai","film"],
+["Wolf Children",2012,"Mamoru Hosoda","film"],
+["Summer Wars",2009,"Mamoru Hosoda","film"],
+["Das Mädchen, das durch die Zeit sprang",2006,"Mamoru Hosoda","film"],
+["5 Centimeters per Second",2007,"Makoto Shinkai","film"],
+["Millennium Actress",2001,"Satoshi Kon","film"],
+["Tokyo Godfathers",2003,"Satoshi Kon","film"],
+["Das Schloss des Cagliostro",1979,"Hayao Miyazaki","film"],
+["Ghost in the Shell 2: Innocence",2004,"Mamoru Oshii","film"],
+["Jin-Roh",1999,"Hiroyuki Okiura","film"],
+["Patlabor 2",1993,"Mamoru Oshii","film"],
+["Ninja Scroll",1993,"Yoshiaki Kawajiri","film"],
+["Vampire Hunter D: Bloodlust",2000,"Yoshiaki Kawajiri","film"],
+["Metropolis",2001,"Rintaro · Otomo","film"],
+["Royal Space Force: Wings of Honnêamise",1987,"Hiroyuki Yamaga · Gainax","film"],
+["Memories",1995,"Otomo · Morimoto · Okamura","film"],
+["Mind Game",2004,"Masaaki Yuasa","film"],
+["Die Nacht ist kurz, geh tapfer Mädchen",2017,"Masaaki Yuasa","film"],
+["Redline",2009,"Takeshi Koike · Madhouse","film"],
+["Promare",2019,"Hiroyuki Imaishi · Trigger","film"],
+["In This Corner of the World",2016,"Sunao Katabuchi","film"],
+["Die Legende der Prinzessin Kaguya",2013,"Isao Takahata · Ghibli","film"],
+["Whisper of the Heart",1995,"Yoshifumi Kondo · Ghibli","film"],
+["Porco Rosso",1992,"Hayao Miyazaki · Ghibli","film"],
+["Wie der Wind sich hebt",2013,"Hayao Miyazaki · Ghibli","film"],
+["Erinnerungen an Marnie",2014,"Hiromasa Yonebayashi · Ghibli","film"],
+["Tränen der Erinnerung",1991,"Isao Takahata · Ghibli","film"],
+["Pom Poko",1994,"Isao Takahata · Ghibli","film"],
+["Der Junge und das Biest",2015,"Mamoru Hosoda","film"],
+["Mirai",2018,"Mamoru Hosoda","film"],
+["Belle",2021,"Mamoru Hosoda","film"],
+["Maquia",2018,"Mari Okada","film"],
+["Josee, der Tiger und die Fische",2020,"Kotaro Tamura","film"],
+["The First Slam Dunk",2022,"Takehiko Inoue","film"],
+["Look Back",2024,"Kiyotaka Oshiyama","film"],
+["Evangelion: 3.0+1.0 Thrice Upon a Time",2021,"Hideaki Anno","film"],
+["Barfuß durch Hiroshima",1983,"Mori Masaki","film"],
+["Bubble",2022,"Tetsuro Araki · Wit Studio","film"]
+];
+
+const LISTS={anime:ANIME,film:FILME,manga:MANGA};
+const STATUSES={
+  anime:[["none","Noch nicht"],["watching","Läuft"],["done","Fertig"],["planned","Merkliste"],["dropped","Abgebrochen"]],
+  film:[["none","Noch nicht"],["done","Gesehen"],["planned","Merkliste"],["dropped","Abgebrochen"]],
+  manga:[["none","Noch nicht"],["watching","Läuft"],["done","Fertig"],["planned","Merkliste"],["dropped","Abgebrochen"],["animeseen","Anime geguckt"]]
+};
+const statusList=()=>STATUSES[current];
+const statusLabel=v=>{const f=statusList().find(s=>s[0]===v); return f?f[1]:v;};
+const FLAG={run:["laufend","f-run"],end:["abgeschlossen","f-end"],open:["Fortsetzung unklar","f-open"],stop:["abgesetzt","f-stop"]};
+const UNIT={anime:"Folge",film:"",manga:"Band"};
+const LS_KEY="animeliste.v1";
+
+let state={anime:{},film:{},manga:{}};
+let current="anime";
+let db=null, winStore=null, downloads=null;
+let remoteOK=false, remoteChecked=false, lastError="";
+
+const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60);
+
+/* ---------- Speichern: eigene Firebase-Datenbank ---------- */
+const CFG_KEY="animeliste.cfg";
+let cfg=null;            /* {apiKey, projectId, email} */
+let tok=null;            /* {idToken, refreshToken, uid, exp} */
+let loadedOK=false, hasStore=false, remoteCount=0, lastSaved=0;
+
+function readLocal(){
+  try{const r=localStorage.getItem(LS_KEY); if(r){const p=JSON.parse(r); if(p&&p.anime&&p.manga){p.film=p.film||{}; return p;}}}catch(e){}
+  return null;
+}
+function writeLocal(){ try{localStorage.setItem(LS_KEY,JSON.stringify(state));}catch(e){} }
+function payload(){ return {anime:state.anime,film:state.film,manga:state.manga,updated:Date.now()}; }
+function countEntries(st){
+  if(!st) return 0;
+  return Object.keys(st.anime||{}).length+Object.keys(st.film||{}).length+Object.keys(st.manga||{}).length;
+}
+
+function loadCfg(){
+  try{const r=localStorage.getItem(CFG_KEY); if(r) cfg=JSON.parse(r);}catch(e){}
+  return cfg;
+}
+function saveCfg(c){ cfg=c; try{localStorage.setItem(CFG_KEY,JSON.stringify(c));}catch(e){} }
+
+async function post(url,body){
+  const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const j=await r.json();
+  if(!r.ok) throw new Error((j&&j.error&&j.error.message)||("HTTP "+r.status));
+  return j;
+}
+
+/* Anmeldung per E-Mail und Passwort. Das Passwort wird nicht gespeichert,
+   nur ein Erneuerungsschlüssel. */
+async function signIn(apiKey,email,password){
+  const j=await post("https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key="+encodeURIComponent(apiKey),
+    {email:email,password:password,returnSecureToken:true});
+  tok={idToken:j.idToken,refreshToken:j.refreshToken,uid:j.localId,exp:Date.now()+(+j.expiresIn-60)*1000};
+  try{localStorage.setItem("animeliste.rt",j.refreshToken);}catch(e){}
+  return tok;
+}
+async function refresh(apiKey,rt){
+  const j=await post("https://securetoken.googleapis.com/v1/token?key="+encodeURIComponent(apiKey),
+    {grant_type:"refresh_token",refresh_token:rt});
+  tok={idToken:j.id_token,refreshToken:j.refresh_token,uid:j.user_id,exp:Date.now()+(+j.expires_in-60)*1000};
+  try{localStorage.setItem("animeliste.rt",j.refresh_token);}catch(e){}
+  return tok;
+}
+async function ensureToken(){
+  if(tok&&Date.now()<tok.exp) return tok;
+  let rt=tok&&tok.refreshToken;
+  if(!rt){ try{rt=localStorage.getItem("animeliste.rt");}catch(e){} }
+  if(!rt) throw new Error("nicht angemeldet");
+  return refresh(cfg.apiKey,rt);
+}
+
+function docUrl(){
+  return "https://firestore.googleapis.com/v1/projects/"+encodeURIComponent(cfg.projectId)+
+         "/databases/(default)/documents/users/"+encodeURIComponent(tok.uid);
+}
+
+async function readRemote(){
+  await ensureToken();
+  const r=await fetch(docUrl(),{headers:{Authorization:"Bearer "+tok.idToken}});
+  if(r.status===404) return null;               /* noch nichts gespeichert */
+  const j=await r.json();
+  if(!r.ok) throw new Error((j&&j.error&&j.error.message)||("HTTP "+r.status));
+  const raw=j.fields&&j.fields.data&&j.fields.data.stringValue;
+  if(!raw) return null;
+  const d=JSON.parse(raw);
+  if(d&&(d.anime||d.manga)){ d.film=d.film||{}; return d; }
+  return null;
+}
+
+let pending=false;
+async function pushRemote(){
+  pending=false;
+  if(!hasStore){ remoteOK=false; paintStatus(); return; }
+  if(!loadedOK){ remoteOK=false; lastError="Laden nicht bestätigt — es wird nichts geschrieben"; paintStatus(); return; }
+  const p=payload(), n=countEntries(p);
+  if(n===0&&remoteCount>0){ lastError="Leerer Stand wurde nicht gespeichert (Schutz)"; paintStatus(); return; }
+  try{
+    await ensureToken();
+    const body={fields:{data:{stringValue:JSON.stringify(p)},updated:{integerValue:String(p.updated)}}};
+    const r=await fetch(docUrl(),{method:"PATCH",headers:{Authorization:"Bearer "+tok.idToken,"Content-Type":"application/json"},body:JSON.stringify(body)});
+    if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error((j.error&&j.error.message)||("HTTP "+r.status)); }
+    remoteOK=true; lastError=""; remoteCount=n; lastSaved=Date.now();
+  }catch(e){
+    remoteOK=false; lastError=(e&&e.message)||"Schreibfehler";
+  }
+  paintStatus();
+}
+
+let t=null;
+function save(){
+  writeLocal(); flash(); pending=true;
+  clearTimeout(t); t=setTimeout(pushRemote,500);
+}
+function flushNow(){ if(pending){ clearTimeout(t); pushRemote(); } }
+addEventListener("visibilitychange",()=>{ if(document.visibilityState==="hidden") flushNow(); });
+addEventListener("pagehide",flushNow);
+addEventListener("beforeunload",flushNow);
+
+let ft=null;
+function flash(){
+  const f=document.getElementById("saveflag");
+  f.textContent = remoteOK ? "gespeichert" : "nur auf diesem Gerät";
+  f.className = "saveflag on"+(remoteOK?"":" warn");
+  clearTimeout(ft); ft=setTimeout(()=>f.classList.remove("on"),1300);
+}
+function entry(list,id){
+  if(!state[list][id]) state[list][id]={s:"none",e:"",r:""};
+  return state[list][id];
+}
+/* ---------- Sichtbarer Speicherzustand ---------- */
+let dirtySinceBackup=false;
+function paintStatus(){
+  const el=document.getElementById("storeState");
+  if(!el) return;
+  if(!remoteChecked){ el.className="storebar checking"; el.textContent="Daten werden geladen …"; return; }
+  const n=countEntries(state);
+  if(remoteOK&&loadedOK){
+    el.className="storebar ok";
+    el.textContent="Gespeichert über: "+(liveStores.map(x=>x.name).join(" und ")||"—")+". "+n+" Einträge geladen"+
+      (lastSaved?", zuletzt gesichert um "+new Date(lastSaved).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"")+".";
+  }else if(!hasStore){
+    el.className="storebar bad";
+    el.textContent="Diese Ansicht hat keinen Zugriff auf einen Speicher — Einträge werden weder geladen noch gesichert. Öffne die Seite in Safari statt in der Claude-App.";
+  }else{
+    el.className="storebar bad";
+    el.textContent="Der Speicher antwortet in dieser Ansicht nicht. Es wird nichts überschrieben, dein Stand auf dem Server bleibt unberührt. Öffne die Seite in Safari statt in der Claude-App."+
+      (lastError?" ("+lastError+")":"");
+  }
+}
+function entry(list,id){
+  if(!state[list][id]) state[list][id]={s:"none",e:"",r:""};
+  return state[list][id];
+}
+
+/* ---------- Darstellung ---------- */
+function render(){
+  const data=LISTS[current];
+  const q=document.getElementById("q").value.trim().toLowerCase();
+  const fs=document.getElementById("fStatus").value;
+  const ff=document.getElementById("fFlag").value;
+  const sort=document.getElementById("fSort").value;
+
+  let rows=data.map((d,i)=>({rank:i+1,title:d[0],year:d[1],scope:d[2],flag:d[3],id:slug(d[0])}));
+  rows=rows.filter(r=>{
+    const en=state[current][r.id]||{};
+    if(q&&!r.title.toLowerCase().includes(q)) return false;
+    if(ff!=="all"&&r.flag!==ff) return false;
+    if(fs==="all") return true;
+    if(fs==="rated") return en.r!=null&&en.r!=="";
+    return (en.s||"none")===fs;
+  });
+
+  if(sort==="desc") rows.sort((a,b)=>b.rank-a.rank);
+  else if(sort==="asc") rows.sort((a,b)=>a.rank-b.rank);
+  else if(sort==="year") rows.sort((a,b)=>b.year-a.year||a.rank-b.rank);
+  else rows.sort((a,b)=>{
+    const ra=parseFloat((state[current][a.id]||{}).r)||-1, rb=parseFloat((state[current][b.id]||{}).r)||-1;
+    return rb-ra||a.rank-b.rank;
+  });
+
+  const list=document.getElementById("list");
+  list.innerHTML="";
+  if(!rows.length){
+    list.innerHTML='<p class="empty">'+(remoteChecked?"Kein Treffer. Suche oder Filter anpassen.":"Daten werden geladen …")+'</p>';
+    updateMeter(); return; }
+
+  const frag=document.createDocumentFragment();
+  for(const r of rows){
+    const en=state[current][r.id]||{s:"none",e:"",r:""};
+    const isFilm=(r.flag==="film");
+    const fl=FLAG[r.flag]||FLAG.end;
+    const el=document.createElement("div");
+    el.className="row s-"+(en.s||"none");
+    el.innerHTML=
+      '<div class="rank">'+r.rank+'</div>'+
+      '<div><div class="title"></div><div class="meta"><span>'+r.year+' · '+r.scope+'</span>'+
+        (isFilm?'':'<span class="flag '+fl[1]+'">'+fl[0]+'</span>')+'</div></div>'+
+      '<div class="fields">'+
+        '<select class="st" data-v="'+(en.s||"none")+'" aria-label="Status">'+
+          statusList().map(s=>'<option value="'+s[0]+'"'+(s[0]===en.s?' selected':'')+'>'+s[1]+'</option>').join('')+
+        '</select>'+
+        (isFilm?'':'<input type="number" inputmode="numeric" min="0" step="1" class="ep" placeholder="'+UNIT[current]+'" value="'+(en.e||"")+'" aria-label="Aktuelle '+UNIT[current]+'">')+
+        '<input type="number" inputmode="decimal" min="1" max="9.9" step="0.1" class="rt" placeholder="Punkte" value="'+(en.r||"")+'" aria-label="Meine Punkte von 9,9">'+
+      '</div>';
+    el.querySelector(".title").textContent=r.title;
+
+    el.querySelector(".st").addEventListener("change",ev=>{
+      entry(current,r.id).s=ev.target.value; save(); render();
+    });
+    const epEl=el.querySelector(".ep");
+    if(epEl) epEl.addEventListener("input",ev=>{
+      const e=entry(current,r.id); e.e=ev.target.value;
+      if(e.s==="none"&&ev.target.value!==""){ e.s="watching"; save(); render(); return; }
+      save(); updateMeter();
+    });
+    el.querySelector(".rt").addEventListener("input",ev=>{
+      let v=ev.target.value;
+      if(v!==""){ let n=parseFloat(v); if(!isNaN(n)){ if(n>9.9) {n=9.9; ev.target.value="9.9";} if(n<1&&v.length>2){n=1; ev.target.value="1";} v=ev.target.value; } }
+      entry(current,r.id).r=v; save(); updateMeter();
+    });
+    frag.appendChild(el);
+  }
+  list.appendChild(frag);
+  updateMeter();
+}
+
+function updateMeter(){
+  const data=LISTS[current], total=data.length;
+  let done=0,watching=0,planned=0,rated=0,sum=0,seen=0;
+  for(const d of data){
+    const en=state[current][slug(d[0])]; if(!en) continue;
+    if(en.s==="done") done++; else if(en.s==="watching") watching++;
+    else if(en.s==="planned") planned++; else if(en.s==="animeseen") seen++;
+    const n=parseFloat(en.r); if(!isNaN(n)){rated++; sum+=n;}
+  }
+  document.getElementById("mDone").textContent=done;
+  document.getElementById("mTotal").textContent="von "+total+" "+(current==="manga"?"gelesen":"gesehen");
+  const avg=rated?(sum/rated).toFixed(2).replace(".",","):"—";
+  document.getElementById("mStats").textContent=
+    (current==="film"?"":watching+" läuft · ")+planned+" gemerkt"+
+    (seen?" · "+seen+" über Anime":"")+" · Schnitt "+avg;
+  document.getElementById("bDone").style.width=(done/total*100)+"%";
+  document.getElementById("bWatch").style.width=(watching/total*100)+"%";
+}
+
+/* ---------- Bedienung ---------- */
+function buildStatusFilter(){
+  const sel=document.getElementById("fStatus");
+  const keep=sel.value;
+  const opts=[["all","Alle Einträge"]]
+    .concat(statusList().map(s=>[s[0], s[0]==="none"?"Noch offen":s[1]]))
+    .concat([["rated","Bewertet"]]);
+  sel.innerHTML=opts.map(o=>'<option value="'+o[0]+'">'+o[1]+'</option>').join('');
+  sel.value=opts.some(o=>o[0]===keep)?keep:"all";
+}
+
+document.querySelectorAll(".tab").forEach(tb=>tb.addEventListener("click",()=>{
+  document.querySelectorAll(".tab").forEach(x=>x.setAttribute("aria-selected",x===tb?"true":"false"));
+  current=tb.dataset.list; document.getElementById("q").value="";
+  buildStatusFilter();
+  document.getElementById("fFlag").hidden=(current==="film");
+  if(current==="film") document.getElementById("fFlag").value="all";
+  render(); scrollTo({top:0,behavior:"smooth"});
+}));
+["q","fStatus","fFlag","fSort"].forEach(id=>{
+  const el=document.getElementById(id);
+  el.addEventListener("input",render); el.addEventListener("change",render);
+});
+document.getElementById("themeBtn").addEventListener("click",()=>{
+  const cur=document.documentElement.getAttribute("data-theme");
+  const next=cur==="light"?"dark":cur==="dark"?"light":(matchMedia("(prefers-color-scheme: dark)").matches?"light":"dark");
+  document.documentElement.setAttribute("data-theme",next);
+  try{localStorage.setItem("animeliste.theme",next);}catch(e){}
+});
+try{const th=localStorage.getItem("animeliste.theme"); if(th) document.documentElement.setAttribute("data-theme",th);}catch(e){}
+
+document.getElementById("dlBtn").addEventListener("click",async()=>{
+  if(!downloads) return;
+  const d=new Date(), p=n=>String(n).padStart(2,"0");
+  const name="anime-liste-"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+".json";
+  try{
+    await downloads.save({filename:name,data:JSON.stringify(payload(),null,1)});
+    dirtySinceBackup=false;
+  }catch(e){
+    const el=document.getElementById("storeState");
+    el.className="storebar bad";
+    el.textContent="Die Datei wurde nicht gespeichert. Nutze stattdessen die Textsicherung.";
+  }
+});
+
+const dlg=document.getElementById("dlg");
+let dlgMode="export";
+document.getElementById("expBtn").addEventListener("click",()=>{
+  dlgMode="export";
+  document.getElementById("dlgTitle").textContent="Sicherung erstellen";
+  document.getElementById("dlgHint").textContent="Text kopieren und irgendwo ablegen. Damit stellst du deine Einträge jederzeit wieder her.";
+  document.getElementById("dlgText").value=JSON.stringify(state);
+  document.getElementById("dlgOk").textContent="Kopieren";
+  dlg.showModal(); document.getElementById("dlgText").select();
+});
+document.getElementById("impBtn").addEventListener("click",()=>{
+  dlgMode="import";
+  document.getElementById("dlgTitle").textContent="Sicherung einspielen";
+  document.getElementById("dlgHint").textContent="Gesicherten Text hier einfügen. Vorhandene Einträge werden überschrieben.";
+  document.getElementById("dlgText").value="";
+  document.getElementById("dlgOk").textContent="Übernehmen";
+  dlg.showModal();
+});
+document.getElementById("dlgClose").addEventListener("click",()=>dlg.close());
+document.getElementById("dlgOk").addEventListener("click",async()=>{
+  const ta=document.getElementById("dlgText");
+  if(dlgMode==="export"){
+    try{ await navigator.clipboard.writeText(ta.value); document.getElementById("dlgOk").textContent="Kopiert"; }
+    catch(e){ ta.select(); document.getElementById("dlgHint").textContent="Kopieren per Tastenkürzel — der Text ist markiert."; }
+    return;
+  }
+  try{
+    const p=JSON.parse(ta.value);
+    if(!p||!p.anime||!p.manga) throw 0;
+    state=migrateFilms({anime:p.anime,film:p.film||{},manga:p.manga});
+    save(); render(); dlg.close();
+  }catch(e){ document.getElementById("dlgHint").textContent="Der Text ließ sich nicht lesen. Bitte die vollständige Sicherung einfügen."; }
+});
+
+/* ---------- Start ---------- */
+function migrateFilms(st){
+  if(!st) return st;
+  st.film=st.film||{};
+  const filmKeys=new Set(FILME.map(f=>slug(f[0])));
+  const animeKeys=new Set(ANIME.map(a=>slug(a[0])));
+  for(const k in (st.anime||{})){
+    if(filmKeys.has(k)&&!animeKeys.has(k)){
+      if(!st.film[k]) st.film[k]=st.anime[k];
+      delete st.anime[k];
+    }
+  }
+  return st;
+}
+function merge(mine,theirs,theirsNewer){
+  const out={};
+  for(const k in theirs) out[k]=theirs[k];
+  for(const k in mine){ if(!(k in out)||!theirsNewer) out[k]=mine[k]; }
+  return out;
+}
+
+const local=migrateFilms(readLocal());
+const localStamp=(local&&local.updated)||0;
+if(local) state={anime:local.anime||{},film:local.film||{},manga:local.manga||{}};
+render(); paintStatus();
+
+async function connect(){
+  remoteChecked=false; paintStatus();
+  try{
+    await ensureToken();
+    hasStore=true;
+    const remote=await readRemote();
+    loadedOK=true;
+    remoteCount=countEntries(remote);
+    if(remote){
+      migrateFilms(remote);
+      const theirsNewer=(remote.updated||0)>localStamp;
+      state.anime=merge(state.anime,remote.anime||{},theirsNewer);
+      state.film=merge(state.film,remote.film||{},theirsNewer);
+      state.manga=merge(state.manga,remote.manga||{},theirsNewer);
+      writeLocal();
+    }
+    remoteOK=true; lastError="";
+  }catch(e){
+    hasStore=!!cfg; loadedOK=false; remoteOK=false;
+    lastError=(e&&e.message)||"Verbindungsfehler";
+  }
+  remoteChecked=true;
+  render(); paintStatus();
+}
+
+/* Einrichtungsdialog */
+function askSetup(){
+  const c=cfg||{};
+  const apiKey=prompt("Firebase Web-API-Schlüssel (apiKey):",c.apiKey||"");
+  if(!apiKey) return;
+  const projectId=prompt("Firebase Projekt-ID (projectId):",c.projectId||"");
+  if(!projectId) return;
+  const email=prompt("Deine E-Mail-Adresse aus Firebase Authentication:",c.email||"");
+  if(!email) return;
+  const pw=prompt("Dein Passwort (wird nicht gespeichert):","");
+  if(!pw) return;
+  saveCfg({apiKey:apiKey.trim(),projectId:projectId.trim(),email:email.trim()});
+  const el=document.getElementById("storeState");
+  el.className="storebar checking"; el.textContent="Anmeldung läuft …";
+  signIn(cfg.apiKey,cfg.email,pw).then(connect).catch(e=>{
+    hasStore=true; remoteChecked=true; remoteOK=false;
+    lastError=(e&&e.message)||"Anmeldung fehlgeschlagen";
+    paintStatus();
+  });
+}
+document.getElementById("setupBtn").addEventListener("click",askSetup);
+
+(async()=>{
+  loadCfg();
+  if(!cfg){ hasStore=false; remoteChecked=true; paintStatus(); return; }
+  hasStore=true;
+  await connect();
+})();
+
+setTimeout(()=>{
+  if(!remoteChecked){
+    remoteChecked=true; remoteOK=false;
+    if(!lastError) lastError="Zeitüberschreitung beim Start";
+    paintStatus(); render();
+  }
+},15000);
+
+</script>
+</body>
+</html>
