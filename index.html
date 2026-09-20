@@ -178,7 +178,7 @@ dialog p.hint{color:var(--muted); font-size:13px; margin:0 0 10px}
   <button type="button" id="impBtn">Sicherung einspielen</button>
 </div>
 
-<p class="storebar checking" id="storeState">Speicher wird geprüft …</p>
+<p class="storebar checking" id="storeState">Wird gestartet …</p>
 
 <div class="list" id="list"></div>
 
@@ -651,7 +651,6 @@ const LS_KEY="animeliste.v1";
 
 let state={anime:{},film:{},manga:{}};
 let current="anime";
-let db=null, winStore=null, downloads=null;
 let remoteOK=false, remoteChecked=false, lastError="";
 
 const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,60);
@@ -777,7 +776,7 @@ function paintStatus(){
   const n=countEntries(state);
   if(remoteOK&&loadedOK){
     el.className="storebar ok";
-    el.textContent="Gespeichert über: "+(liveStores.map(x=>x.name).join(" und ")||"—")+". "+n+" Einträge geladen"+
+    el.textContent="Gespeichert in deiner eigenen Datenbank. "+n+" Einträge geladen"+
       (lastSaved?", zuletzt gesichert um "+new Date(lastSaved).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"")+".";
   }else if(!hasStore){
     el.className="storebar bad";
@@ -914,20 +913,6 @@ document.getElementById("themeBtn").addEventListener("click",()=>{
   try{localStorage.setItem("animeliste.theme",next);}catch(e){}
 });
 try{const th=localStorage.getItem("animeliste.theme"); if(th) document.documentElement.setAttribute("data-theme",th);}catch(e){}
-
-document.getElementById("dlBtn").addEventListener("click",async()=>{
-  if(!downloads) return;
-  const d=new Date(), p=n=>String(n).padStart(2,"0");
-  const name="anime-liste-"+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+".json";
-  try{
-    await downloads.save({filename:name,data:JSON.stringify(payload(),null,1)});
-    dirtySinceBackup=false;
-  }catch(e){
-    const el=document.getElementById("storeState");
-    el.className="storebar bad";
-    el.textContent="Die Datei wurde nicht gespeichert. Nutze stattdessen die Textsicherung.";
-  }
-});
 
 const dlg=document.getElementById("dlg");
 let dlgMode="export";
