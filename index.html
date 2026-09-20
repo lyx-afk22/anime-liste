@@ -173,12 +173,12 @@ dialog p.hint{color:var(--muted); font-size:13px; margin:0 0 10px}
 <div class="toolrow">
   <button type="button" id="themeBtn">Hell / Dunkel</button>
   
-  <button type="button" id="setupBtn">Verbindung einrichten</button>
+  <button type="button" id="setupBtn">Anmelden</button>
   <button type="button" id="expBtn">Sicherung als Text</button>
   <button type="button" id="impBtn">Sicherung einspielen</button>
 </div>
 
-<p class="storebar checking" id="storeState">Wird gestartet …</p>
+<p class="storebar checking" id="storeState">Verbindung wird hergestellt …</p>
 
 <div class="list" id="list"></div>
 
@@ -657,6 +657,9 @@ const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").sl
 
 /* ---------- Speichern: eigene Firebase-Datenbank ---------- */
 const CFG_KEY="animeliste.cfg";
+/* Fest eingebaut: beides sind bei Firebase öffentliche Werte.
+   Der Schutz kommt aus den Sicherheitsregeln, nicht aus der Geheimhaltung. */
+const BUILTIN={apiKey:"AIzaSyBhJ4oDnSB8XcLe-K1jV9CydvLThHiDZbM",projectId:"ultimate-ranking-list"};
 let cfg=null;            /* {apiKey, projectId, email} */
 let tok=null;            /* {idToken, refreshToken, uid, exp} */
 let loadedOK=false, hasStore=false, remoteCount=0, lastSaved=0;
@@ -673,7 +676,9 @@ function countEntries(st){
 }
 
 function loadCfg(){
-  try{const r=localStorage.getItem(CFG_KEY); if(r) cfg=JSON.parse(r);}catch(e){}
+  let stored=null;
+  try{const r=localStorage.getItem(CFG_KEY); if(r) stored=JSON.parse(r);}catch(e){}
+  cfg={apiKey:BUILTIN.apiKey,projectId:BUILTIN.projectId,email:(stored&&stored.email)||""};
   return cfg;
 }
 function saveCfg(c){ cfg=c; try{localStorage.setItem(CFG_KEY,JSON.stringify(c));}catch(e){} }
@@ -780,10 +785,10 @@ function paintStatus(){
       (lastSaved?", zuletzt gesichert um "+new Date(lastSaved).toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}):"")+".";
   }else if(!hasStore){
     el.className="storebar bad";
-    el.textContent="Diese Ansicht hat keinen Zugriff auf einen Speicher — Einträge werden weder geladen noch gesichert. Öffne die Seite in Safari statt in der Claude-App.";
+    el.textContent="Noch nicht angemeldet. Tippe oben auf Anmelden.";
   }else{
     el.className="storebar bad";
-    el.textContent="Der Speicher antwortet in dieser Ansicht nicht. Es wird nichts überschrieben, dein Stand auf dem Server bleibt unberührt. Öffne die Seite in Safari statt in der Claude-App."+
+    el.textContent="Keine Verbindung zur Datenbank. Es wird nichts überschrieben, dein Stand bleibt unberührt. Tippe auf Anmelden oder lade die Seite neu."+
       (lastError?" ("+lastError+")":"");
   }
 }
@@ -1001,16 +1006,12 @@ async function connect(){
 
 /* Einrichtungsdialog */
 function askSetup(){
-  const c=cfg||{};
-  const apiKey=prompt("Firebase Web-API-Schlüssel (apiKey):",c.apiKey||"");
-  if(!apiKey) return;
-  const projectId=prompt("Firebase Projekt-ID (projectId):",c.projectId||"");
-  if(!projectId) return;
-  const email=prompt("Deine E-Mail-Adresse aus Firebase Authentication:",c.email||"");
+  if(!cfg) loadCfg();
+  const email=prompt("E-Mail-Adresse:",cfg.email||"");
   if(!email) return;
-  const pw=prompt("Dein Passwort (wird nicht gespeichert):","");
+  const pw=prompt("Passwort (wird nicht gespeichert):","");
   if(!pw) return;
-  saveCfg({apiKey:apiKey.trim(),projectId:projectId.trim(),email:email.trim()});
+  saveCfg({apiKey:BUILTIN.apiKey,projectId:BUILTIN.projectId,email:email.trim()});
   const el=document.getElementById("storeState");
   el.className="storebar checking"; el.textContent="Anmeldung läuft …";
   signIn(cfg.apiKey,cfg.email,pw).then(connect).catch(e=>{
@@ -1023,7 +1024,6 @@ document.getElementById("setupBtn").addEventListener("click",askSetup);
 
 (async()=>{
   loadCfg();
-  if(!cfg){ hasStore=false; remoteChecked=true; paintStatus(); return; }
   hasStore=true;
   await connect();
 })();
